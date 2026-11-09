@@ -1,0 +1,19 @@
+{
+  "wifi_ssid": "YOUR_2_4_GHZ_WIFI_NAME",
+  "wifi_password": "SET_WIFI_PASSWORD_LOCALLY",
+  "mqtt_host": "PC_LAN_IPV4_ADDRESS",
+  "mqtt_port": 1884,
+  "mqtt_username": "predimaint_device",
+  "mqtt_password": "SET_DEVICE_MQTT_PASSWORD_LOCALLY",
+  "machine_id": "demo-machine",
+  "publish_interval_s": 5,
+  "dht_pin": 27,
+  "vibration_pin": 16,
+  "vibration_active_level": 1,
+  "acs_pin": 34,
+  "current_mode": "simulated",
+  "current_offset_v": 1.67,
+  "current_sensitivity_v_per_a": 0.185,
+  "divider_compensation": 1.5,
+  "simulate_missing_sensors": false
+}

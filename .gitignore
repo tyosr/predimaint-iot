@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+firmware/config.json
+mosquitto/passwd
+__pycache__/
+.pytest_cache/
+.venv/
+*.py[cod]
+.coverage
+htmlcov/
+*.db

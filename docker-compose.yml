@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-predimaint}
+      POSTGRES_USER: ${POSTGRES_USER:-predimaint}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-db-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-predimaint} -d ${POSTGRES_DB:-predimaint}"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    restart: unless-stopped
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    environment:
+      MQTT_USERNAME: ${MQTT_USERNAME:-predimaint_device}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-change-this-mqtt-password}
+      MQTT_BACKEND_USERNAME: ${MQTT_BACKEND_USERNAME:-predimaint_backend}
+      MQTT_BACKEND_PASSWORD: ${MQTT_BACKEND_PASSWORD:-change-this-backend-password}
+    ports:
+      - "${MQTT_HOST_PORT:-1884}:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto/acl:/mosquitto/config/acl:ro
+      - mosquitto_data:/mosquitto/data
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["mosquitto_passwd -b -c /mosquitto/config/passwd \"$$MQTT_USERNAME\" \"$$MQTT_PASSWORD\" && mosquitto_passwd -b /mosquitto/config/passwd \"$$MQTT_BACKEND_USERNAME\" \"$$MQTT_BACKEND_PASSWORD\" && chown mosquitto:mosquitto /mosquitto/config/passwd && chmod 0700 /mosquitto/config/passwd && exec mosquitto -c /mosquitto/config/mosquitto.conf"]
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_pub -h localhost -p 1883 -i predimaint_backend -u $${MQTT_BACKEND_USERNAME:-predimaint_backend} -P $${MQTT_BACKEND_PASSWORD:-change-this-backend-password} -q 1 -t predimaint/predimaint_backend/status -m healthcheck >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 4s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://predimaint:change-this-db-password@postgres:5432/predimaint}
+      MQTT_HOST: mosquitto
+      MQTT_USERNAME: ${MQTT_BACKEND_USERNAME:-predimaint_backend}
+      MQTT_PASSWORD: ${MQTT_BACKEND_PASSWORD:-change-this-backend-password}
+    ports:
+      - "${API_HOST_PORT:-8001}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  mosquitto_data:

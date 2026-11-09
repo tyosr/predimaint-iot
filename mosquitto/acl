@@ -1,0 +1,11 @@
+# The device client ID equals its machine_id; it can publish to its own topics only.
+pattern write predimaint/%c/telemetry
+pattern write predimaint/%c/status
+
+# Separate backend account is read-only for telemetry and device status.
+user predimaint_backend
+topic read predimaint/+/telemetry
+topic read predimaint/+/status
+topic read $SYS/broker/version
+# Used only by the Compose healthcheck; the application's client ID is different.
+topic write predimaint/predimaint_backend/status
